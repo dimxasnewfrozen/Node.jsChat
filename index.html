@@ -1,0 +1,101 @@
+<html>
+	<head>
+		<title>Chat</title>
+	</head>
+	<style>
+		.hide {
+			display: none;
+		}
+	</style>
+	<body>
+
+		<div id="chat" style="height:400px;"></div>
+
+		<div id="typing" class="hide">User is typing...</div>
+
+		<form id="send-message">
+			
+			<input type="text" size="50" id="message"></input>
+
+			<input type="submit"></input>
+		</form>
+
+	</body>
+
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+
+	<script>
+
+	$(document).ready(function () {
+
+		
+		
+
+		var socket = io.connect();
+
+		var $messageForm = $('#send-message');
+		var $messageBox  = $('#message');
+		var $chat 		 = $('#chat');
+
+		$chat.append(localStorage.chatData);
+
+		var typingTimer;
+		var doneTypingInterval = 500;
+
+		$messageForm.submit(function(e) {
+
+			e.preventDefault();
+
+			socket.emit('send message', $messageBox.val());
+			$messageBox.val("");
+
+		});
+
+		socket.on('new message', function (data) {
+
+			$chat.append(data + "<br/>");
+			localStorage.chatData=$chat.html();
+		});
+
+
+		$messageBox.keyup(function(){
+
+		    clearTimeout(typingTimer);
+
+		    if ($messageBox.val) {
+		        typingTimer = setTimeout(doneTyping, doneTypingInterval);
+		        socket.emit('typing', 'start');
+		    }
+		});
+		
+		socket.on('typing message', function (data) {
+			console.log(data);
+			if (data == "start") {
+				$("#typing").removeClass("hide");
+			}
+
+			if (data == "stop") {
+				$("#typing").addClass("hide");
+			}
+			
+		});
+
+
+		
+
+		function doneTyping () {
+		    socket.emit('typing', 'stop');
+		}
+
+
+
+
+	});
+
+
+	</script>
+
+
+</html>
